@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1b2b">
+    <title>CENTRE MISSIONNAIRE LE TABERNACLE - Protocole</title>
+    
+    <!-- SDKs Firebase Compatibility Mode -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #0b1b2b;
+            --primary-light: #102a43;
+            --accent: #d97706;
+            --accent-light: #fef3c7;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* HEADER */
+        header { background: linear-gradient(135deg, #0b1b2b 0%, #102a43 100%); color: white; padding: 18px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .header-content { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { background: var(--accent); color: var(--primary); font-weight: 900; font-size: 20px; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(217,119,6,0.4); }
+        .logo-title h1 { font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }
+        .logo-title p { font-size: 11px; color: #f59e0b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+        .nav-tabs { display: flex; gap: 8px; background: rgba(255,255,255,0.08); padding: 4px; border-radius: 8px; }
+        .tab-btn { background: transparent; border: none; color: #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+        .tab-btn.active, .tab-btn:hover { background-color: var(--accent); color: var(--primary); }
+
+        .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); color: #cbd5e1; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+
+        /* MAIN */
+        main { max-width: 1100px; width: 100%; margin: 24px auto; padding: 0 16px; flex-grow: 1; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS & GRID */
+        .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+        /* KPIS */
+        .kpi { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 18px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+        .kpi-badge { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
+        .kpi-info p { font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+        .kpi-info h2 { font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+
+        /* FORMS */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #475569; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .form-control { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; background: #fafafa; }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(11,27,43,0.1); background: white; }
+
+        .effectifs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; }
+        .effectif-box { background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center; }
+        .effectif-box label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 6px; }
+        .effectif-box input { text-align: center; font-size: 18px; font-weight: 800; color: var(--text-main); }
+
+        .total-card { background: linear-gradient(135deg, #0b1b2b 0%, #102a43 100%); color: white; padding: 18px 24px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 20px; box-shadow: 0 4px 10px rgba(11,27,43,0.2); }
+        .total-card span { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #cbd5e1; }
+        .total-card h2 { font-size: 32px; font-weight: 900; color: #f59e0b; }
+
+        /* BUTTONS */
+        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: #f59e0b; width: 100%; margin-top: 20px; padding: 12px; font-size: 15px; box-shadow: 0 4px 10px rgba(11,27,43,0.15); }
+        .btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); }
+        .btn-pdf { background: #dc2626; color: white; }
+        .btn-pdf:hover { background: #b91c1c; }
+        .btn-excel { background: #16a34a; color: white; }
+        .btn-excel:hover { background: #15803d; }
+        .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 5px 10px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 700; }
+        .btn-danger:hover { background: #dc2626; color: white; }
+
+        /* TABLEAU */
+        .table-responsive { overflow-x: auto; margin-top: 16px; border-radius: 10px; border: 1px solid var(--border); background: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        
+        thead th { background: #0b1b2b; color: white; font-size: 11px; text-transform: uppercase; font-weight: 800; padding: 14px 12px; letter-spacing: 0.5px; border-bottom: 2px solid var(--accent); }
+        tbody td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; color: var(--text-main); vertical-align: middle; }
+        tbody tr:nth-child(even) { background-color: #f8fafc; }
+        tbody tr:hover { background-color: #f1f5f9; }
+
+        tfoot tr { background: #f1f5f9; font-weight: 800; border-top: 2px solid var(--primary); }
+        tfoot td { padding: 12px; color: var(--primary); font-size: 13px; }
+
+        .badge-type { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; background: var(--accent-light); color: #b45309; margin-top: 3px; }
+        
+        .effectifs-container { display: flex; gap: 6px; flex-wrap: wrap; }
+        .badge-h { background: #dbeafe; color: #1e40af; font-weight: 700; padding: 3px 8px; border-radius: 5px; font-size: 11px; border: 1px solid #bfdbfe; }
+        .badge-f { background: #fce7f3; color: #9d174d; font-weight: 700; padding: 3px 8px; border-radius: 5px; font-size: 11px; border: 1px solid #fbcfe8; }
+        .badge-e { background: #d1fae5; color: #065f46; font-weight: 700; padding: 3px 8px; border-radius: 5px; font-size: 11px; border: 1px solid #a7f3d0; }
+        .badge-n { background: #fef3c7; color: #92400e; font-weight: 700; padding: 3px 8px; border-radius: 5px; font-size: 11px; border: 1px solid #fde68a; }
+
+        .progress-bar-bg { background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden; display: flex; margin-top: 10px; }
+        .bar-h { background: #2563eb; }
+        .bar-f { background: #ec4899; }
+        .bar-e { background: #10b981; }
+
+        @media print {
+            header, .nav-tabs, .no-print, .btn-danger { display: none !important; }
+            body { background: white; padding: 0; font-size: 11pt; }
+            main { max-width: 100%; margin: 0; padding: 0; }
+            .card { border: none; box-shadow: none; padding: 0; margin-bottom: 15px; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+            .table-responsive { border: 1px solid #000; }
+            thead th { background-color: #000 !important; color: #fff !important; }
+            td, th { border: 1px solid #000 !important; padding: 8px !important; }
+        }
+
+        .print-header { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- EN-TETE IMPRESSION (PDF) -->
+    <div class="print-header">
+        <h2 style="font-size:20px; font-weight:900; color:#0b1b2b;">CENTRE MISSIONNAIRE LE TABERNACLE</h2>
+        <p style="font-size:13px; font-weight:700; color:#d97706;">DÉPARTEMENT DU PROTOCOLE - RAPPORT OFFICIEL DES CULTES</p>
+    </div>
+
+    <!-- HEADER DE L'APPLICATION -->
+    <header class="no-print">
+        <div class="header-content">
+            <div class="logo-area">
+                <div class="logo-icon">✝</div>
+                <div class="logo-title">
+                    <h1>CENTRE MISSIONNAIRE LE TABERNACLE</h1>
+                    <p style="display:flex; align-items:center; gap:10px; margin-top:2px;">
+                        <span>Gestion des Cultes</span>
+                        <span class="status-pill"><span class="status-dot"></span> Prêt & Synchro</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="nav-tabs">
+                <button onclick="switchTab('dash')" id="tab-btn-dash" class="tab-btn active">📊 Tableau de bord</button>
+                <button onclick="switchTab('saisie')" id="tab-btn-saisie" class="tab-btn">➕ Nouveau Culte</button>
+                <button onclick="switchTab('histo')" id="tab-btn-histo" class="tab-btn">📋 Historique & Rapports</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- 1. TABLEAU DE BORD -->
+        <section id="panel-dash" class="tab-panel active">
+            <div class="grid-4">
+                <div class="kpi">
+                    <div class="kpi-badge" style="background:#dbeafe; color:#2563eb;">👥</div>
+                    <div class="kpi-info">
+                        <p>Moyenne / Culte</p>
+                        <h2 id="kpi-avg">0</h2>
+                    </div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-badge" style="background:#d1fae5; color:#059669;">📅</div>
+                    <div class="kpi-info">
+                        <p>Total Cultes</p>
+                        <h2 id="kpi-count">0</h2>
+                    </div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-badge" style="background:#fef3c7; color:#d97706;">✨</div>
+                    <div class="kpi-info">
+                        <p>Nouveaux Venus</p>
+                        <h2 id="kpi-nouveaux">0</h2>
+                    </div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-badge" style="background:#f3e8ff; color:#9333ea;">🏆</div>
+                    <div class="kpi-info">
+                        <p>Record Présence</p>
+                        <h2 id="kpi-max">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size:15px; font-weight:800; color:var(--primary); margin-bottom:12px;">📊 Démographie Globale</h3>
+                <div style="font-size:13px; color:var(--text-muted); font-weight:600; display:flex; gap:20px; flex-wrap:wrap;">
+                    <span>Hommes: <strong id="sum-h" style="color:#2563eb;">0</strong></span>
+                    <span>Femmes: <strong id="sum-f" style="color:#ec4899;">0</strong></span>
+                    <span>Enfants: <strong id="sum-e" style="color:#10b981;">0</strong></span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="bar-h" class="bar-h" style="width: 0%;"></div>
+                    <div id="bar-f" class="bar-f" style="width: 0%;"></div>
+                    <div id="bar-e" class="bar-e" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size:15px; font-weight:800; color:var(--primary); margin-bottom:12px;">📌 Dernier Culte Enregistré</h3>
+                <div id="last-culte-box" style="color:var(--text-muted); font-size:13px; text-align:center; padding:16px 0;">
+                    Aucun culte enregistré pour le moment.
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. FORMULAIRE DE SAISIE -->
+        <section id="panel-saisie" class="tab-panel">
+            <div class="card" style="max-width:700px; margin: 0 auto;">
+                <h2 style="font-size:18px; font-weight:800; color:var(--primary); margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid var(--accent-light);">
+                    ✍️ Rapport du Protocole
+                </h2>
+
+                <form id="culteForm" onsubmit="sauvegarderCulte(event)">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Date du Culte *</label>
+                            <input type="date" id="dateCulte" required class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Type de Culte *</label>
+                            <select id="typeCulte" required class="form-control">
+                                <optgroup label="Cultes Dominicaux (Dimanche)">
+                                    <option value="1er Culte Dominical">1er Culte Dominical</option>
+                                    <option value="2ème Culte Dominical">2ème Culte Dominical</option>
+                                    <option value="3ème Culte Dominical">3ème Culte Dominical</option>
+                                </optgroup>
+                                <optgroup label="Cultes en Semaine">
+                                    <option value="Culte d'Enseignement">Culte d'Enseignement</option>
+                                    <option value="Culte d'Intercession">Culte d'Intercession</option>
+                                    <option value="Culte Spécial / Veillée">Culte Spécial / Veillée</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Modérateur *</label>
+                            <input type="text" id="moderateur" placeholder="Ex: Frère Joseph" required class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Orateur / Prédicateur *</label>
+                            <input type="text" id="orateur" placeholder="Ex: Pasteur Paul" required class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Thème de la Prédication</label>
+                        <input type="text" id="theme" placeholder="Ex: La puissance de la prière" class="form-control">
+                    </div>
+
+                    <div style="margin:20px 0 10px 0; font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px;">
+                        👥 RELEVÉ DES EFFECTIFS
+                    </div>
+
+                    <div class="effectifs-grid">
+                        <div class="effectif-box">
+                            <label>Hommes</label>
+                            <input type="number" min="0" id="nbHommes" value="0" oninput="calculerTotal()" class="form-control">
+                        </div>
+                        <div class="effectif-box">
+                            <label>Femmes</label>
+                            <input type="number" min="0" id="nbFemmes" value="0" oninput="calculerTotal()" class="form-control">
+                        </div>
+                        <div class="effectif-box">
+                            <label>Enfants</label>
+                            <input type="number" min="0" id="nbEnfants" value="0" oninput="calculerTotal()" class="form-control">
+                        </div>
+                        <div class="effectif-box" style="background:var(--accent-light); border-color:#fde68a;">
+                            <label style="color:#b45309;">Nouveaux</label>
+                            <input type="number" min="0" id="nbNouveaux" value="0" class="form-control" style="border-color:#f59e0b;">
+                        </div>
+                    </div>
+
+                    <div class="total-card">
+                        <span>Effectif Total Présent :</span>
+                        <h2 id="totalDisplay">0</h2>
+                    </div>
+
+                    <div class="form-group" style="margin-top:20px;">
+                        <label>Observations du Protocole</label>
+                        <textarea id="observations" rows="3" placeholder="Remarques, événements particuliers..." class="form-control"></textarea>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn btn-primary">💾 ENREGISTRER LE CULTE</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. HISTORIQUE & RAPPORTS -->
+        <section id="panel-histo" class="tab-panel">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;" class="no-print">
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; flex:1; min-width:280px;">
+                        <input type="text" id="searchInput" onkeyup="afficherHistorique()" placeholder="🔍 Rechercher orateur, modérateur..." class="form-control" style="max-width:260px;">
+                        <select id="typeFilter" onchange="afficherHistorique()" class="form-control" style="max-width:220px;">
+                            <option value="TOUS">Tous les types de cultes</option>
+                            <option value="1er Culte Dominical">1er Culte Dominical</option>
+                            <option value="2ème Culte Dominical">2ème Culte Dominical</option>
+                            <option value="3ème Culte Dominical">3ème Culte Dominical</option>
+                            <option value="Culte d'Enseignement">Culte d'Enseignement</option>
+                            <option value="Culte d'Intercession">Culte d'Intercession</option>
+                            <option value="Culte Spécial / Veillée">Culte Spécial / Veillée</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" onclick="exporterPDF()" class="btn btn-pdf" title="Imprimer ou enregistrer en PDF">
+                            📄 Imprimer / PDF
+                        </button>
+                        <button type="button" onclick="exporterExcel()" class="btn btn-excel" title="Exporter au format Excel CSV">
+                            📊 Export Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 16%;">Date & Type</th>
+                                <th style="width: 24%;">Orateur / Modérateur</th>
+                                <th style="width: 25%;">Détail Effectifs (H / F / E)</th>
+                                <th style="width: 12%; text-align: center;">Nouveaux</th>
+                                <th style="width: 13%; text-align: center;">Total Présents</th>
+                                <th class="no-print" style="width: 10%; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                        <tfoot id="tableFoot"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // CONFIGURATION CLOUD FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZI-k0UcKKsZHgQYEGLpC1BTEomFolAs0",
+            authDomain: "tabernacle-protocole.firebaseapp.com",
+            projectId: "tabernacle-protocole",
+            storageBucket: "tabernacle-protocole.firebasestorage.app",
+            messagingSenderId: "260533485437",
+            appId: "1:260533485437:web:6130205ab46c106ae25614",
+            measurementId: "G-DTFWJW07P4"
+        };
+
+        let db = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            db.enablePersistence().catch(() => {});
+        } catch(e) {
+            console.log("Mode hybride activé");
+        }
+
+        let donneesCultes = JSON.parse(localStorage.getItem('cultes_tabernacle_v7')) || [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('dateCulte');
+            if(dateInput) dateInput.valueAsDate = new Date();
+            
+            rafraichirInterface();
+
+            if(db) {
+                db.collection("cultes").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+                    let cloudData = [];
+                    snapshot.forEach(doc => {
+                        cloudData.push({ docId: doc.id, ...doc.data() });
+                    });
+                    if(cloudData.length > 0) {
+                        donneesCultes = cloudData;
+                        localStorage.setItem('cultes_tabernacle_v7', JSON.stringify(donneesCultes));
+                        rafraichirInterface();
+                    }
+                }, err => console.log("Note Cloud:", err));
+            }
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            const targetPanel = document.getElementById(`panel-${tabId}`);
+            const targetBtn = document.getElementById(`tab-btn-${tabId}`);
+
+            if(targetPanel) targetPanel.classList.add('active');
+            if(targetBtn) targetBtn.classList.add('active');
+
+            if(tabId === 'histo') {
+                afficherHistorique();
+            }
+        }
+
+        function calculerTotal() {
+            let h = parseInt(document.getElementById('nbHommes').value) || 0;
+            let f = parseInt(document.getElementById('nbFemmes').value) || 0;
+            let e = parseInt(document.getElementById('nbEnfants').value) || 0;
+            let total = h + f + e;
+            document.getElementById('totalDisplay').innerText = total;
+            return total;
+        }
+
+        function sauvegarderCulte(e) {
+            e.preventDefault();
+            let total = calculerTotal();
+
+            if (total <= 0) {
+                alert("Veuillez saisir au moins un effectif.");
+                return;
+            }
+
+            let nouveauCulte = {
+                timestamp: Date.now(),
+                date: document.getElementById('dateCulte').value,
+                type: document.getElementById('typeCulte').value,
+                moderateur: document.getElementById('moderateur').value.trim(),
+                orateur: document.getElementById('orateur').value.trim(),
+                theme: document.getElementById('theme').value.trim(),
+                hommes: parseInt(document.getElementById('nbHommes').value) || 0,
+                femmes: parseInt(document.getElementById('nbFemmes').value) || 0,
+                enfants: parseInt(document.getElementById('nbEnfants').value) || 0,
+                nouveaux: parseInt(document.getElementById('nbNouveaux').value) || 0,
+                total: total,
+                observations: document.getElementById('observations').value.trim()
+            };
+
+            // Enregistrement immédiat dans l'interface
+            donneesCultes.unshift(nouveauCulte);
+            localStorage.setItem('cultes_tabernacle_v7', JSON.stringify(donneesCultes));
+
+            // Envoi Cloud Firebase en tâche de fond
+            if(db) {
+                db.collection("cultes").add(nouveauCulte).catch(err => console.log("Stockage local temporaire:", err));
+            }
+
+            alert("Culte enregistré avec succès !");
+            document.getElementById('culteForm').reset();
+            document.getElementById('dateCulte').valueAsDate = new Date();
+            document.getElementById('totalDisplay').innerText = '0';
+
+            rafraichirInterface();
+            switchTab('dash');
+        }
+
+        function supprimerCulte(target) {
+            if (confirm("Voulez-vous vraiment supprimer cet enregistrement ?")) {
+                if(typeof target === 'number') {
+                    donneesCultes.splice(target, 1);
+                } else {
+                    donneesCultes = donneesCultes.filter(c => c.docId !== target);
+                    if(db) db.collection("cultes").doc(target).delete().catch(() => {});
+                }
+                localStorage.setItem('cultes_tabernacle_v7', JSON.stringify(donneesCultes));
+                rafraichirInterface();
+            }
+        }
+
+        function rafraichirInterface() {
+            misesAJourKPIs();
+            afficherDernierCulte();
+            afficherHistorique();
+        }
+
+        function misesAJourKPIs() {
+            let count = donneesCultes.length;
+            document.getElementById('kpi-count').innerText = count;
+
+            if (count === 0) {
+                document.getElementById('kpi-avg').innerText = '0';
+                document.getElementById('kpi-nouveaux').innerText = '0';
+                document.getElementById('kpi-max').innerText = '0';
+                return;
+            }
+
+            let sumTotal = donneesCultes.reduce((acc, c) => acc + (c.total || 0), 0);
+            let sumNouveaux = donneesCultes.reduce((acc, c) => acc + (c.nouveaux || 0), 0);
+            let maxTotal = Math.max(...donneesCultes.map(c => c.total || 0));
+
+            document.getElementById('kpi-avg').innerText = Math.round(sumTotal / count);
+            document.getElementById('kpi-nouveaux').innerText = sumNouveaux;
+            document.getElementById('kpi-max').innerText = maxTotal;
+
+            let sumH = donneesCultes.reduce((acc, c) => acc + (c.hommes || 0), 0);
+            let sumF = donneesCultes.reduce((acc, c) => acc + (c.femmes || 0), 0);
+            let sumE = donneesCultes.reduce((acc, c) => acc + (c.enfants || 0), 0);
+
+            document.getElementById('sum-h').innerText = sumH;
+            document.getElementById('sum-f').innerText = sumF;
+            document.getElementById('sum-e').innerText = sumE;
+
+            if (sumTotal > 0) {
+                document.getElementById('bar-h').style.width = (sumH / sumTotal * 100) + '%';
+                document.getElementById('bar-f').style.width = (sumF / sumTotal * 100) + '%';
+                document.getElementById('bar-e').style.width = (sumE / sumTotal * 100) + '%';
+            }
+        }
+
+        function afficherDernierCulte() {
+            let box = document.getElementById('last-culte-box');
+            if (donneesCultes.length === 0) {
+                box.innerHTML = 'Aucun culte enregistré pour le moment.';
+                return;
+            }
+
+            let c = donneesCultes[0];
+            box.innerHTML = `
+                <div style="text-align:left; background:#f8fafc; padding:16px; border-radius:10px; border:1px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                        <span class="badge-type">${c.type}</span>
+                        <span style="font-size:12px; font-weight:700; color:var(--text-muted);">${c.date}</span>
+                    </div>
+                    <div style="margin-top:8px; font-size:14px; font-weight:800; color:var(--primary);">
+                        Orateur: ${c.orateur} | Modérateur: ${c.moderateur}
+                    </div>
+                    ${c.theme ? `<div style="font-style:italic; font-size:12px; color:var(--text-muted); margin-top:2px;">« ${c.theme} »</div>` : ''}
+                    <div style="margin-top:12px; display:flex; gap:16px; font-size:13px; font-weight:700;">
+                        <span style="color:#2563eb;">Hommes: ${c.hommes}</span>
+                        <span style="color:#ec4899;">Femmes: ${c.femmes}</span>
+                        <span style="color:#10b981;">Enfants: ${c.enfants}</span>
+                        <span style="color:var(--accent);">Total: ${c.total}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function afficherHistorique() {
+            let tbody = document.getElementById('tableBody');
+            let tfoot = document.getElementById('tableFoot');
+            if(!tbody) return;
+
+            let query = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').toLowerCase();
+            let typeFilter = document.getElementById('typeFilter') ? document.getElementById('typeFilter').value : 'TOUS';
+            
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            let filtres = donneesCultes.filter(c => {
+                let matchQuery = (c.orateur || '').toLowerCase().includes(query) || 
+                                 (c.moderateur || '').toLowerCase().includes(query) ||
+                                 (c.theme || '').toLowerCase().includes(query);
+                let matchType = (typeFilter === 'TOUS') ? true : c.type === typeFilter;
+                return matchQuery && matchType;
+            });
+
+            if (filtres.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:24px;">Aucun culte trouvé dans l\'historique.</td></tr>';
+                return;
+            }
+
+            let cumulH = 0, cumulF = 0, cumulE = 0, cumulN = 0, cumulTotal = 0;
+
+            filtres.forEach((c, index) => {
+                cumulH += c.hommes || 0;
+                cumulF += c.femmes || 0;
+                cumulE += c.enfants || 0;
+                cumulN += c.nouveaux || 0;
+                cumulTotal += c.total || 0;
+
+                let deleteArg = c.docId ? `'${c.docId}'` : index;
+
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong style="font-size:13px; color:var(--primary);">${c.date}</strong><br>
+                        <span class="badge-type">${c.type}</span>
+                    </td>
+                    <td>
+                        <strong style="color:var(--text-main); font-size:13px;">${c.orateur}</strong><br>
+                        <small style="color:var(--text-muted);">Mod: ${c.moderateur}</small>
+                        ${c.theme ? `<br><small style="font-style:italic; color:#64748b;">« ${c.theme} »</small>` : ''}
+                    </td>
+                    <td>
+                        <div class="effectifs-container">
+                            <span class="badge-h">H: ${c.hommes}</span>
+                            <span class="badge-f">F: ${c.femmes}</span>
+                            <span class="badge-e">E: ${c.enfants}</span>
+                        </div>
+                    </td>
+                    <td style="text-align: center;"><span class="badge-n">${c.nouveaux}</span></td>
+                    <td style="text-align: center;"><strong style="font-size:16px; color:var(--primary);">${c.total}</strong></td>
+                    <td class="no-print" style="text-align:right;">
+                        <button type="button" onclick="supprimerCulte(${deleteArg})" class="btn-danger">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="2">CUMUL TOTAL (${filtres.length} cultes)</td>
+                    <td>
+                        <div class="effectifs-container">
+                            <span class="badge-h">Total H: ${cumulH}</span>
+                            <span class="badge-f">Total F: ${cumulF}</span>
+                            <span class="badge-e">Total E: ${cumulE}</span>
+                        </div>
+                    </td>
+                    <td style="text-align: center;"><span class="badge-n">${cumulN}</span></td>
+                    <td style="text-align: center; font-size: 18px; color: var(--accent); font-weight: 900;">${cumulTotal}</td>
+                    <td class="no-print"></td>
+                </tr>
+            `;
+        }
+
+        function exporterPDF() {
+            if (donneesCultes.length === 0) {
+                alert("Aucune donnée à imprimer ou exporter.");
+                return;
+            }
+            window.print();
+        }
+
+        function exporterExcel() {
+            if (donneesCultes.length === 0) {
+                alert("Aucune donnée à exporter.");
+                return;
+            }
+
+            let csv = "Date;Type;Moderateur;Orateur;Theme;Hommes;Femmes;Enfants;Nouveaux;Total;Observations\n";
+            donneesCultes.forEach(c => {
+                csv += `${c.date};"${c.type}";"${c.moderateur}";"${c.orateur}";"${c.theme || ''}";${c.hommes};${c.femmes};${c.enfants};${c.nouveaux};${c.total};"${c.observations || ''}"\n`;
+            });
+
+            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Rapport_Cultes_Tabernacle_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
